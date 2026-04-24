@@ -6,6 +6,7 @@ Model Context Protocol (MCP) stdio server for Microsoft Graph, built as a self-c
 The server exposes one tool, `graph-api`, that can call Microsoft Graph as the signed-in user. It is intended for MCP clients such as Claude Desktop and Claude Code CLI.
 
 For central deployment and local testing, see [docs/DEPLOYMENT-GUIDE.md](docs/DEPLOYMENT-GUIDE.md).
+
 For release ownership and upkeep, see [docs/MAINTENANCE.md](docs/MAINTENANCE.md).
 
 ## Authentication Model
