@@ -1,4 +1,5 @@
 # MCP Server for Microsoft Graph
+Forked from https://github.com/MartinM85/mcp-server-graph-api/.
 
 Model Context Protocol (MCP) stdio server for Microsoft Graph, built as a self-contained Windows executable.
 
