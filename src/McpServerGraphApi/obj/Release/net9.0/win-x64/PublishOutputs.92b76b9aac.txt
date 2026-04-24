@@ -1,0 +1,2 @@
+D:\claude\mcp-server-graph-api\McpServerGraphAPI\bin\Publish\1.0.0\McpServerGraphApi.pdb
+D:\claude\mcp-server-graph-api\McpServerGraphAPI\bin\Publish\1.0.0\McpServerGraphApi.exe
