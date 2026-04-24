@@ -1,0 +1,63 @@
+# .gitignore for .NET projects
+# Build results
+bin/
+obj/
+artifacts/
+
+# User-specific files
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# Publish and distribution folders
+publish/
+dist/
+
+# Visual Studio Code
+.vscode/
+
+# Logs
+*.log
+
+# NuGet packages
+*.nupkg
+# Package restore results
+project.lock.json
+project.fragment.lock.json
+artifacts/
+
+# Rider
+.idea/
+
+# Others
+*.vspscc
+*.vssscc
+*.pdb
+*.mdb
+_ReSharper*/
+
+# Test results
+TestResults/
+
+# Local history
+.localhistory/
+
+# Backup & temp files
+*.bak
+*.tmp
+~$*
+
+# Windows image file caches
+*.db
+
+# Crash reports
+*.stackdump
+
+# Python virtual environments (if any)
+venv/
+.env/
