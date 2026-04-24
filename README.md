@@ -30,7 +30,7 @@ Prerequisites:
 - PowerShell 5.1 or newer
 - .NET 9 SDK
 
-From the `mcp` folder:
+From the repository root:
 
 ```powershell
 .\build.ps1
@@ -49,7 +49,7 @@ The package contains:
 - `McpServerGraphApi.exe.sha256`
 - `release.json`
 
-The `artifacts\dist\<version>` release payload is intentionally version-controlled so Software Center packages can be reproduced from git.
+The `artifacts\dist\<version>` release payload is generated locally. For public distribution, attach those files to a GitHub Release or copy them to your Software Center package source rather than committing generated binaries to source history.
 
 Production releases should be Authenticode-signed:
 

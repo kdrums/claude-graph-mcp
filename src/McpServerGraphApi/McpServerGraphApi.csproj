@@ -9,7 +9,7 @@
     <AssemblyName>McpServerGraphApi</AssemblyName>
     <Deterministic>true</Deterministic>
     <RepositoryType>git</RepositoryType>
-    <RepositoryUrl>https://github.com/kdrums/Git.git</RepositoryUrl>
+    <RepositoryUrl>https://github.com/kdrums/claude-graph-mcp.git</RepositoryUrl>
   </PropertyGroup>
 
   <ItemGroup>

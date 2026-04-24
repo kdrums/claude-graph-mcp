@@ -27,11 +27,12 @@ Get-FileHash .\artifacts\dist\<version>\McpServerGraphApi.exe -Algorithm SHA256
 Get-Content .\artifacts\dist\<version>\release.json
 ```
 
-4. Commit source, docs, `version.txt`, `McpServerGraphApi.exe`, `McpServerGraphApi.exe.sha256`, and `release.json`.
-5. Copy `artifacts\dist\<version>` to the Software Center source location.
-6. Update the Software Center detection rule to the new `version.txt` content.
+4. Commit source and docs changes.
+5. Attach the contents of `artifacts\dist\<version>` to the GitHub Release for the version.
+6. Copy `artifacts\dist\<version>` to the Software Center source location.
+7. Update the Software Center detection rule to the new `version.txt` content.
 
-For clean binary provenance, commit source changes first, then build from that source commit and commit only the generated release artifacts. `release.json` records the source revision, dirty-source flag, hash, signature status, and build time.
+For clean binary provenance, commit source changes first, then build from that source commit and publish only the generated release artifacts. `release.json` records the source revision, dirty-source flag, hash, signature status, and build time.
 
 ## Entra App Registration
 
@@ -115,7 +116,7 @@ Quarterly:
 - Confirm the central app registration owner list is current.
 - Confirm Software Center detection still targets the intended version file.
 - Confirm the code-signing certificate is valid, has a documented renewal owner, and is not near expiry.
-- Confirm checked-in release artifacts include a matching `.sha256` file and `release.json`.
+- Confirm the GitHub Release and Software Center source include a matching `.sha256` file and `release.json`.
 
 ## Security Maintenance
 

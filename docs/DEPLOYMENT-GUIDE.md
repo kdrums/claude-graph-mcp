@@ -8,7 +8,7 @@ The deployment model is simple:
 
 ## Build The Exe
 
-From the `mcp` folder:
+From the repository root:
 
 ```powershell
 .\build.ps1
@@ -28,6 +28,8 @@ version.txt
 ```
 
 The build also creates `McpServerGraphApi.exe.sha256` and `release.json` for release validation. Keep them with the package source even if Software Center only executes the `.exe`.
+
+The generated `artifacts` folder is intentionally ignored by git. Attach release files to a GitHub Release or copy them to the Software Center package source instead of committing build output.
 
 For production releases, sign the executable during build:
 

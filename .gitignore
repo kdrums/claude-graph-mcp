@@ -29,7 +29,6 @@ dist/
 # Package restore results
 project.lock.json
 project.fragment.lock.json
-artifacts/
 
 # Rider
 .idea/

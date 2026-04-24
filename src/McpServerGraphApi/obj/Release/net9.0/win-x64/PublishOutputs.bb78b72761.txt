@@ -1,1 +1,0 @@
-D:\Git\mcp\artifacts\publish\1.0.0\McpServerGraphApi.exe

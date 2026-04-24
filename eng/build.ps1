@@ -67,7 +67,7 @@ if (Get-Command git -ErrorAction SilentlyContinue) {
 
 Write-Host "Revision: $sourceRevision"
 if ($sourceDirty) {
-    Write-Warning "The mcp folder has uncommitted changes. The release manifest will mark sourceDirty=true."
+    Write-Warning "The repository has uncommitted changes. The release manifest will mark sourceDirty=true."
 }
 
 # ---------------------------------------------------------------------------
@@ -207,7 +207,7 @@ $manifest = [ordered]@{
     sha256 = $hash.Hash
     signatureStatus = $signature.Status.ToString()
     signerCertificateThumbprint = if ($signature.SignerCertificate) { $signature.SignerCertificate.Thumbprint } else { $null }
-    repositoryUrl = 'https://github.com/kdrums/Git.git'
+    repositoryUrl = 'https://github.com/kdrums/claude-graph-mcp.git'
 }
 
 $manifest | ConvertTo-Json -Depth 5 | Set-Content (Join-Path $distDir 'release.json') -Encoding UTF8
