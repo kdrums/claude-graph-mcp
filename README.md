@@ -13,6 +13,8 @@ For release ownership and upkeep, see [docs/MAINTENANCE.md](docs/MAINTENANCE.md)
 
 This project uses delegated interactive sign-in through `InteractiveBrowserCredential`.
 
+The first Graph request opens a browser sign-in page. After that, the server persists an account record under `%LOCALAPPDATA%\McpServerGraphApi\auth` and uses Azure.Identity's persistent token cache so new Claude CLI sessions can silently reuse the signed-in account when tenant policy allows it.
+
 Create an Entra ID app registration as a public client:
 
 - Add a platform under **Authentication**: **Mobile and desktop applications**.

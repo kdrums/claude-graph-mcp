@@ -138,7 +138,9 @@ List my recent unread emails.
 
 The MCP server starts automatically when Claude Desktop needs it. Authentication happens when the Graph tool is called. If sign-in fails, the tool returns an error instead of closing the MCP server.
 
-Within one running MCP process, the server reuses the Microsoft Graph access token until it is close to expiry. If you see repeated browser prompts, check the MCP logs for different `PID` values; that means the MCP client is starting a new server process for each request.
+Within one running MCP process, the server reuses the Microsoft Graph access token until it is close to expiry. Across new MCP processes, the server uses Azure.Identity's persistent token cache plus an account record saved under `%LOCALAPPDATA%\McpServerGraphApi\auth`.
+
+If you see repeated browser prompts, check whether the account record exists, whether the tenant/client ID or scopes changed, and whether Conditional Access sign-in frequency is forcing reauthentication. Different `PID` values in MCP logs mean the MCP client is starting new server processes, which should still reuse the persisted account after the first successful sign-in.
 
 ## If Claude Says The MCP Disconnected
 

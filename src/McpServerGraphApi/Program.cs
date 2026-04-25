@@ -56,7 +56,7 @@ internal class Program
     {
         var credential = CreateCredential(tenantId, clientId, graphCloud);
 
-        Console.Error.WriteLine($"[MCP Graph API] Starting MCP server for {graphCloud.Name}. PID: {Environment.ProcessId}. Authentication will happen when a Graph tool is called.");
+        LogInfo($"Starting MCP server for {graphCloud.Name}. PID: {Environment.ProcessId}. Authentication will happen when a Graph tool is called.");
 
         var builder = Host.CreateEmptyApplicationBuilder(settings: null);
 
@@ -75,15 +75,9 @@ internal class Program
         await app.RunAsync();
     }
 
-    private static InteractiveBrowserCredential CreateCredential(string tenantId, string clientId, GraphCloudSettings graphCloud)
+    private static TokenCredential CreateCredential(string tenantId, string clientId, GraphCloudSettings graphCloud)
     {
-        return new InteractiveBrowserCredential(new InteractiveBrowserCredentialOptions
-        {
-            TenantId = tenantId,
-            ClientId = clientId,
-            AuthorityHost = graphCloud.AuthorityHost,
-            TokenCachePersistenceOptions = new TokenCachePersistenceOptions { Name = "mcp-graph-server" }
-        });
+        return new PersistentInteractiveBrowserCredential(tenantId, clientId, graphCloud);
     }
 
     private static string[] GetGraphScopes(string? value)
@@ -136,9 +130,9 @@ internal class Program
                     return lockedToken;
                 }
 
-                Console.Error.WriteLine("[MCP Graph API] Requesting Microsoft Graph access token.");
+                LogInfo("Requesting Microsoft Graph access token.");
                 cachedToken = await credential.GetTokenAsync(new TokenRequestContext(scopes), cancellationToken);
-                Console.Error.WriteLine($"[MCP Graph API] Access token acquired. Expires: {cachedToken.Value.ExpiresOn:O}");
+                LogInfo($"Access token acquired. Expires: {cachedToken.Value.ExpiresOn:O}");
                 return cachedToken.Value;
             }
             finally
@@ -153,6 +147,117 @@ internal class Program
         }
     }
 
+    private sealed class PersistentInteractiveBrowserCredential : TokenCredential
+    {
+        private const string TokenCacheName = "mcp-graph-server";
+        private readonly SemaphoreSlim authenticationLock = new(1, 1);
+        private readonly string authenticationRecordPath;
+        private readonly InteractiveBrowserCredential credential;
+        private bool hasAuthenticationRecord;
+
+        public PersistentInteractiveBrowserCredential(string tenantId, string clientId, GraphCloudSettings graphCloud)
+        {
+            authenticationRecordPath = GetAuthenticationRecordPath(tenantId, clientId, graphCloud);
+            var authenticationRecord = TryLoadAuthenticationRecord(authenticationRecordPath);
+            hasAuthenticationRecord = authenticationRecord is not null;
+
+            credential = new InteractiveBrowserCredential(new InteractiveBrowserCredentialOptions
+            {
+                TenantId = tenantId,
+                ClientId = clientId,
+                AuthorityHost = graphCloud.AuthorityHost,
+                AuthenticationRecord = authenticationRecord,
+                TokenCachePersistenceOptions = new TokenCachePersistenceOptions { Name = TokenCacheName }
+            });
+        }
+
+        public override AccessToken GetToken(TokenRequestContext requestContext, CancellationToken cancellationToken)
+        {
+            return GetTokenAsync(requestContext, cancellationToken).AsTask().GetAwaiter().GetResult();
+        }
+
+        public override async ValueTask<AccessToken> GetTokenAsync(TokenRequestContext requestContext, CancellationToken cancellationToken)
+        {
+            if (!hasAuthenticationRecord)
+            {
+                LogInfo($"No saved authentication account record found at {authenticationRecordPath}.");
+                await AuthenticateAndPersistAsync(requestContext, cancellationToken);
+            }
+
+            try
+            {
+                return await credential.GetTokenAsync(requestContext, cancellationToken);
+            }
+            catch (AuthenticationRequiredException)
+            {
+                await AuthenticateAndPersistAsync(requestContext, cancellationToken);
+                return await credential.GetTokenAsync(requestContext, cancellationToken);
+            }
+        }
+
+        private async Task AuthenticateAndPersistAsync(TokenRequestContext requestContext, CancellationToken cancellationToken)
+        {
+            await authenticationLock.WaitAsync(cancellationToken);
+            try
+            {
+                LogInfo("Interactive sign-in is required. The signed-in account will be remembered for future MCP processes.");
+                var authenticationRecord = await credential.AuthenticateAsync(requestContext, cancellationToken);
+
+                Directory.CreateDirectory(Path.GetDirectoryName(authenticationRecordPath)!);
+                await using var stream = File.Open(authenticationRecordPath, FileMode.Create, FileAccess.Write, FileShare.None);
+                await authenticationRecord.SerializeAsync(stream, cancellationToken);
+                hasAuthenticationRecord = true;
+                LogInfo($"Saved authentication account record to {authenticationRecordPath}.");
+            }
+            finally
+            {
+                authenticationLock.Release();
+            }
+        }
+
+        private static AuthenticationRecord? TryLoadAuthenticationRecord(string path)
+        {
+            if (!File.Exists(path))
+            {
+                return null;
+            }
+
+            try
+            {
+                using var stream = File.OpenRead(path);
+                var authenticationRecord = AuthenticationRecord.Deserialize(stream);
+                LogInfo($"Loaded authentication account record from {path}.");
+                return authenticationRecord;
+            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or JsonException)
+            {
+                LogInfo($"Saved authentication account record could not be read from {path}. Interactive sign-in may be required. Error: {ex.GetType().Name}.");
+                return null;
+            }
+        }
+
+        private static string GetAuthenticationRecordPath(string tenantId, string clientId, GraphCloudSettings graphCloud)
+        {
+            var fileName = string.Join(
+                '-',
+                SafeFileNamePart(graphCloud.Name),
+                SafeFileNamePart(tenantId),
+                SafeFileNamePart(clientId)) + ".authrecord.json";
+
+            return Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                "McpServerGraphApi",
+                "auth",
+                fileName);
+        }
+
+        private static string SafeFileNamePart(string value)
+        {
+            var safe = Regex.Replace(value, @"[^A-Za-z0-9_.-]", "_");
+            return string.IsNullOrWhiteSpace(safe) ? "default" : safe;
+        }
+    }
+
     private static string? GetRequiredEnvironmentVariable(string name, TextWriter error)
     {
         var value = Environment.GetEnvironmentVariable(name, EnvironmentVariableTarget.Process);
@@ -163,6 +268,26 @@ internal class Program
 
         error.WriteLine($"[MCP Graph API] Missing required environment variable: {name}");
         return null;
+    }
+
+    private static void LogInfo(string message)
+    {
+        var line = $"[MCP Graph API] {DateTimeOffset.Now:O} {message}";
+        Console.Error.WriteLine(line);
+
+        try
+        {
+            var logDirectory = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                "McpServerGraphApi",
+                "logs");
+            Directory.CreateDirectory(logDirectory);
+            File.AppendAllText(Path.Combine(logDirectory, "mcp-server-graphApi.log"), line + Environment.NewLine);
+        }
+        catch
+        {
+            // Logging must never interfere with MCP stdio.
+        }
     }
 
     private sealed class CliCommand
@@ -314,7 +439,7 @@ internal class Program
                 var graphScopes = GetGraphScopes(options.Get("graph-scopes", string.Join(' ', DefaultGraphScopes)));
                 Console.WriteLine($"Testing Microsoft 365 sign-in for {graphCloud.Name} with scopes: {string.Join(' ', graphScopes)}");
                 var credential = CreateCredential(tenantId, clientId, graphCloud);
-                await credential.GetTokenAsync(new TokenRequestContext(graphScopes));
+                await credential.GetTokenAsync(new TokenRequestContext(graphScopes), CancellationToken.None);
                 Console.WriteLine("Authentication succeeded.");
                 return 0;
             }
@@ -497,23 +622,30 @@ internal class Program
 
         private static bool WriteClaudeCodeConfig(string claudeCodeExe, string command, string tenantId, string clientId, string nationalCloud, string[] graphScopes, out string error)
         {
+            _ = RemoveClaudeCodeConfig(claudeCodeExe, out _);
+
+            var serverConfig = new JsonObject
+            {
+                ["type"] = "stdio",
+                ["command"] = command,
+                ["args"] = new JsonArray(),
+                ["env"] = new JsonObject
+                {
+                    ["TENANT_ID"] = tenantId,
+                    ["CLIENT_ID"] = clientId,
+                    ["NATIONAL_CLOUD"] = nationalCloud,
+                    ["GRAPH_SCOPES"] = string.Join(' ', graphScopes)
+                }
+            };
+
             var args = new List<string>
             {
                 "mcp",
-                "add",
+                "add-json",
                 "--scope",
                 "user",
-                "-e",
-                $"TENANT_ID={tenantId}",
-                "-e",
-                $"CLIENT_ID={clientId}",
-                "-e",
-                $"NATIONAL_CLOUD={nationalCloud}",
-                "-e",
-                $"GRAPH_SCOPES={string.Join(' ', graphScopes)}",
                 ServerName,
-                "--",
-                command
+                serverConfig.ToJsonString()
             };
 
             return RunProcess(claudeCodeExe, args, out error);

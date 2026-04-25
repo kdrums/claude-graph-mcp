@@ -142,4 +142,4 @@ Common causes:
 - Wrong tenant ID or client ID.
 - Redirect URI missing from the public client app registration.
 - Conditional Access policy blocking the desktop sign-in.
-- Repeated authentication prompts can mean the MCP client is starting multiple server processes. Check the MCP stderr log for different `PID` values.
+- Repeated authentication prompts can mean the saved account record under `%LOCALAPPDATA%\McpServerGraphApi\auth` is missing, the tenant/client/scopes changed, Conditional Access requires reauthentication, or the MCP client is starting multiple server processes. Check the MCP stderr log for different `PID` values.
