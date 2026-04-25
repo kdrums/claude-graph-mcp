@@ -121,6 +121,34 @@ claude mcp add --scope user ...
 
 After install, restart Claude Desktop or start a new Claude Code session.
 
+## Sample Prompts
+
+Try these prompts in Claude after the MCP server is installed:
+
+```text
+Use the Graph MCP server to get my Microsoft 365 profile.
+```
+
+```text
+Use Microsoft Graph to list my 10 most recent unread emails.
+```
+
+```text
+Show my calendar events for today and summarize any meetings that need preparation.
+```
+
+```text
+Find recent files in my OneDrive and SharePoint that mention quarterly planning.
+```
+
+```text
+Use the graph-api tool to call /me/messages with $top=5 and $select=subject,from,receivedDateTime.
+```
+
+```text
+Get my manager and direct reports from Microsoft Graph.
+```
+
 ## Supported Clouds
 
 Supported `--national-cloud` values:
