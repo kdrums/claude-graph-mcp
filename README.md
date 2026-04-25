@@ -149,6 +149,22 @@ Use the graph-api tool to call /me/messages with $top=5 and $select=subject,from
 Get my manager and direct reports from Microsoft Graph.
 ```
 
+## Suggested CLAUDE.md Guidance
+
+Add this to your `CLAUDE.md` file to keep Microsoft Graph MCP usage focused and token-efficient:
+
+```md
+## Microsoft Graph MCP Usage
+
+When using the Graph MCP server, request the minimum data needed for the task.
+
+Prefer narrow Microsoft Graph queries with `$select`, `$top`, `$filter`, and `$orderby` instead of retrieving full objects. For email, calendar, and file summaries, start with metadata and previews only, such as `subject`, `from`, `receivedDateTime`, `bodyPreview`, `start`, `end`, `organizer`, `name`, `webUrl`, and `lastModifiedDateTime`.
+
+Do not request full message bodies, file contents, large attachment data, or broad folder/list dumps unless the user explicitly asks for them or the preview data is insufficient. If more detail is needed, fetch it in a second targeted request for only the relevant item IDs.
+
+Summarize MCP results compactly and avoid echoing raw Graph JSON unless the user asks for raw output.
+```
+
 ## Supported Clouds
 
 Supported `--national-cloud` values:
